@@ -41,16 +41,17 @@ MOLAR_VOLUME_NM3 = 22.414
 class OreCompositionH2:
     """Erzzusammensetzung in Massen-% fuer H2-Reduktion.
     
-    Kann sowohl Fe2O3 (Haematit) als auch Fe3O4 (Magnetit) enthalten.
+    Kann Fe2O3 (Haematit), Fe3O4 (Magnetit) und FeO (Wuestit) enthalten.
     """
     Fe2O3: float = 94.4  # % Haematit
     Fe3O4: float = 0.0   # % Magnetit
+    FeO: float = 0.0     # % Wuestit
     SiO2: float = 2.5    # %
     CaO: float = 3.1     # %
 
     def validate(self) -> bool:
         """Prueft ob die Summe ~100% ergibt."""
-        total = self.Fe2O3 + self.Fe3O4 + self.SiO2 + self.CaO
+        total = self.Fe2O3 + self.Fe3O4 + self.FeO + self.SiO2 + self.CaO
         return 99.0 <= total <= 101.0
 
 
@@ -174,10 +175,13 @@ def calculate_ore_amount_from_fe_h2(
     # Fe-Gehalt im Erz [kg Fe / kg Erz]
     # Fe2O3 -> 2 Fe, Fe-Anteil = 2*56 / 160 = 0.7
     # Fe3O4 -> 3 Fe, Fe-Anteil = 3*56 / 232 = 0.724
+    # FeO -> 1 Fe, Fe-Anteil = 56 / 72 = 0.778
     fe_in_fe2o3 = 2 * MOLAR_MASS['Fe'] / MOLAR_MASS['Fe2O3']  # = 0.7
     fe_in_fe3o4 = 3 * MOLAR_MASS['Fe'] / 232.0  # M_Fe3O4 = 232
+    fe_in_feo = MOLAR_MASS['Fe'] / MOLAR_MASS['FeO']  # = 0.778
     fe_content_ore = (ore.Fe2O3 / 100.0 * fe_in_fe2o3 + 
-                      ore.Fe3O4 / 100.0 * fe_in_fe3o4)
+                      ore.Fe3O4 / 100.0 * fe_in_fe3o4 +
+                      ore.FeO / 100.0 * fe_in_feo)
 
     # Erzmenge = Fe im DRI / Fe-Gehalt im Erz
     if fe_content_ore > 0:
@@ -226,18 +230,20 @@ def calculate_h2_mass_balance(
     # === 2. Stoffmengen im Erz [kmol/tDRI] ===
     m_Fe2O3_ore = ore_amount * ore.Fe2O3 / 100.0  # kg Fe2O3
     m_Fe3O4_ore = ore_amount * ore.Fe3O4 / 100.0  # kg Fe3O4
+    m_FeO_ore = ore_amount * ore.FeO / 100.0      # kg FeO
 
     n_Fe2O3_ore = m_Fe2O3_ore / MOLAR_MASS['Fe2O3']  # kmol Fe2O3
     n_Fe3O4_ore = m_Fe3O4_ore / 232.0  # kmol Fe3O4 (M = 232)
+    n_FeO_ore = m_FeO_ore / MOLAR_MASS['FeO']  # kmol FeO
 
-    # Sauerstoff im Erz (Fe2O3: 3 O, Fe3O4: 4 O)
-    n_O_ore = 3 * n_Fe2O3_ore + 4 * n_Fe3O4_ore  # kmol O
+    # Sauerstoff im Erz (Fe2O3: 3 O, Fe3O4: 4 O, FeO: 1 O)
+    n_O_ore = 3 * n_Fe2O3_ore + 4 * n_Fe3O4_ore + 1 * n_FeO_ore  # kmol O
     
-    # Fe im Erz (Fe2O3: 2 Fe, Fe3O4: 3 Fe)
-    n_Fe_ore = 2 * n_Fe2O3_ore + 3 * n_Fe3O4_ore  # kmol Fe
+    # Fe im Erz (Fe2O3: 2 Fe, Fe3O4: 3 Fe, FeO: 1 Fe)
+    n_Fe_ore = 2 * n_Fe2O3_ore + 3 * n_Fe3O4_ore + 1 * n_FeO_ore  # kmol Fe
     
     # O/Fe des Erzes berechnen (dynamisch basierend auf Erzzusammensetzung)
-    # Fe2O3: O/Fe = 3/2 = 1.5, Fe3O4: O/Fe = 4/3 = 1.333
+    # Fe2O3: O/Fe = 3/2 = 1.5, Fe3O4: O/Fe = 4/3 = 1.333, FeO: O/Fe = 1.0
     o_fe_ore = n_O_ore / n_Fe_ore if n_Fe_ore > 0 else 1.5
 
     # === 3. Sauerstoff-Bilanz ===

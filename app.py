@@ -576,7 +576,7 @@ with tab_h2_massenbilanz:
 
     # === Iron Ore (same structure as BF) ===
     st.markdown("**Iron Ore**")
-    col_h2_ore1, col_h2_ore2, col_h2_ore3, col_h2_ore4, col_h2_ore5 = st.columns(5)
+    col_h2_ore1, col_h2_ore2, col_h2_ore3, col_h2_ore4, col_h2_ore5, col_h2_ore6 = st.columns(6)
     with col_h2_ore1:
         h2_ore_fe2o3 = st.number_input("Fe₂O₃ [%]", min_value=0.0, max_value=100.0, value=94.4, step=0.1, key="h2_ore_fe2o3",
                                         help="Hematite content")
@@ -584,11 +584,14 @@ with tab_h2_massenbilanz:
         h2_ore_fe3o4 = st.number_input("Fe₃O₄ [%]", min_value=0.0, max_value=100.0, value=0.0, step=0.1, key="h2_ore_fe3o4",
                                         help="Magnetite content")
     with col_h2_ore3:
-        h2_ore_sio2 = st.number_input("SiO₂ [%]", min_value=0.0, max_value=100.0, value=2.5, step=0.1, key="h2_ore_sio2")
+        h2_ore_feo = st.number_input("FeO [%]", min_value=0.0, max_value=100.0, value=0.0, step=0.1, key="h2_ore_feo",
+                                      help="Wustite content")
     with col_h2_ore4:
-        h2_ore_cao = st.number_input("CaO [%]", min_value=0.0, max_value=100.0, value=3.1, step=0.1, key="h2_ore_cao")
+        h2_ore_sio2 = st.number_input("SiO₂ [%]", min_value=0.0, max_value=100.0, value=2.5, step=0.1, key="h2_ore_sio2")
     with col_h2_ore5:
-        h2_ore_sum = h2_ore_fe2o3 + h2_ore_fe3o4 + h2_ore_sio2 + h2_ore_cao
+        h2_ore_cao = st.number_input("CaO [%]", min_value=0.0, max_value=100.0, value=3.1, step=0.1, key="h2_ore_cao")
+    with col_h2_ore6:
+        h2_ore_sum = h2_ore_fe2o3 + h2_ore_fe3o4 + h2_ore_feo + h2_ore_sio2 + h2_ore_cao
         st.metric("Sum", f"{h2_ore_sum:.1f}%")
 
     # === Reduction Gas ===
@@ -627,7 +630,7 @@ with tab_h2_massenbilanz:
     st.caption(f"**Metallization:** {metallization:.1f}%")
 
 # === H2 Mass Balance Calculation ===
-h2_ore = OreCompositionH2(Fe2O3=h2_ore_fe2o3, Fe3O4=h2_ore_fe3o4, SiO2=h2_ore_sio2, CaO=h2_ore_cao)
+h2_ore = OreCompositionH2(Fe2O3=h2_ore_fe2o3, Fe3O4=h2_ore_fe3o4, FeO=h2_ore_feo, SiO2=h2_ore_sio2, CaO=h2_ore_cao)
 h2_input_gas = ReductionGasComposition(H2=h2_gas_h2, H2O=h2_gas_h2o)
 h2_dri = DRIComposition(Fe_met=h2_dri_fe, FeO=h2_dri_feo, C=0.0, Gangue=h2_dri_gangue)
 
